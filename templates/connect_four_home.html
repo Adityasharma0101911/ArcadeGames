@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .mode-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .mode-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card-header {
+        font-size: 1.5rem;
+        padding: 1.2rem;
+    }
+    
+    .card-icon {
+        font-size: 4rem;
+        margin: 1.5rem 0;
+        color: #6c5ce7;
+    }
+    
+    .page-title {
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center page-title">Connect Four</h1>
+    <p class="text-center mb-5">Choose your game mode:</p>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mode-card text-center">
+                <div class="card-header bg-primary text-white">
+                    Local Game
+                </div>
+                <div class="card-body">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="card-title">Two Players</h5>
+                    <p class="card-text">Play against a friend on the same device. Take turns to drop your pieces.</p>
+                    <a href="{{ url_for('connect_four_local') }}" class="btn btn-primary btn-lg mt-3">Play</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mode-card text-center">
+                <div class="card-header bg-danger text-white">
+                    AI Game
+                </div>
+                <div class="card-body">
+                    <div class="card-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h5 class="card-title">Play vs AI</h5>
+                    <p class="card-text">Challenge our smart AI opponent. Test your skills against different difficulty levels.</p>
+                    <a href="{{ url_for('connect_four_ai') }}" class="btn btn-danger btn-lg mt-3">Play</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mode-card text-center">
+                <div class="card-header bg-success text-white">
+                    Online Game
+                </div>
+                <div class="card-body">
+                    <div class="card-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h5 class="card-title">Multiplayer</h5>
+                    <p class="card-text">Play against other players online. Get matched with an opponent and compete live.</p>
+                    <a href="{{ url_for('connect_four_online') }}" class="btn btn-success btn-lg mt-3">Play</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('connect_four_leaderboard') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-trophy"></i> Leaderboard
+            </a>
+            <a href="{{ url_for('home') }}" class="btn btn-outline-secondary btn-lg ml-3">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

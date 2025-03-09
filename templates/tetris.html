@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+    /* Hide the navbar */
+    .navbar {
+        display: none !important;
+    }
+    
+    /* Remove the padding since we don't need space for navbar anymore */
+    body {
+        padding-top: 0 !important;
+        overflow: hidden; /* Prevent scrolling */
+        height: 100vh;
+        width: 100vw;
+    }
+    
+    /* Make tetris container fullscreen and centered */
+    .tetris-main-container {
+        width: 100%;
+        height: 100vh;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Override container styles for the game */
+    .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        height: 100%;
+    }
+    
+    /* Reduce the size of the Tetris title to save space */
+    .game-header h1 {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    
+    /* Make game container fill available space */
+    .game-container {
+        flex: 1;
+        height: calc(100vh - 100px);
+        align-items: stretch;
+    }
+    
+    /* Make the main game area larger */
+    .main-game {
+        width: auto;
+        height: 100%;
+        flex: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative; /* Make sure positioning works for canvas and overlays */
+    }
+    
+    /* Adjust panel widths */
+    .left-panel, .right-panel {
+        width: auto;
+        min-width: 180px;
+        flex: 1;
+    }
+    
+    /* Make canvas fill the game area */
+    #tetris {
+        width: 100%;
+        height: 100%;
+        max-height: 90vh;
+        display: block;
+        position: absolute; /* This ensures canvas fills the container properly */
+        top: 0;
+        left: 0;
+    }
+    
+    /* Add responsive adjustments */
+    @media (max-width: 768px) {
+        .game-container {
+            flex-direction: column;
+        }
+        
+        .main-game {
+            order: 1;
+            height: 60vh;
+        }
+        
+        .left-panel, .right-panel {
+            order: 2;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tetris-main-container">
+    <div class="game-header">
+        <h1>TETRIS</h1>
+        <div class="particles-js" id="particles-js"></div>
+    </div>
+    
+    <div class="game-container">
+        <div class="left-panel">
+            <div class="panel-content">
+                <div class="hold-piece">
+                    <h2>HOLD <span class="key-hint">(C)</span></h2>
+                    <canvas id="holdPiece" width="100" height="100"></canvas>
+                </div>
+                <div class="statistics">
+                    <h2>STATISTICS</h2>
+                    <div class="stat-row">
+                        <span>Level:</span>
+                        <span id="level">1</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Lines:</span>
+                        <span id="lines">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Score:</span>
+                        <span id="score">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Combo:</span>
+                        <span id="combo">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>High Score:</span>
+                        <span id="high-score">{{ current_user.tetris_high_score }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-game">
+            <div id="countdown" class="countdown"></div>
+            <canvas id="tetris"></canvas>
+            <div id="gameOverlay">
+                <div id="pauseIndicator">PAUSED</div>
+                <div id="gameOverIndicator">GAME OVER</div>
+                <div id="levelUpIndicator">LEVEL UP!</div>
+                <div id="comboIndicator"></div>
+                <div id="tetrisIndicator">TETRIS!</div>
+                <div id="perfectClear">PERFECT CLEAR!</div>
+            </div>
+            <div id="confetti-container"></div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel-content">
+                <div class="next-piece">
+                    <h2>NEXT</h2>
+                    <div class="next-piece-container">
+                        <canvas id="nextPiece" width="100" height="100"></canvas>
+                        <canvas id="nextPiece2" width="80" height="80"></canvas>
+                        <canvas id="nextPiece3" width="60" height="60"></canvas>
+                    </div>
+                </div>
+                <div class="controls">
+                    <h2>CONTROLS</h2>
+                    <div class="control-key">
+                        <span><i class="fas fa-arrow-left"></i> <i class="fas fa-arrow-right"></i>:</span>
+                        <span>Move</span>
+                    </div>
+                    <div class="control-key">
+                        <span><i class="fas fa-arrow-up"></i>:</span>
+                        <span>Rotate</span>
+                    </div>
+                    <div class="control-key">
+                        <span><i class="fas fa-arrow-down"></i>:</span>
+                        <span>Soft Drop</span>
+                    </div>
+                    <div class="control-key">
+                        <span>Space:</span>
+                        <span>Hard Drop</span>
+                    </div>
+                    <div class="control-key">
+                        <span>C:</span>
+                        <span>Hold Piece</span>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <button id="start-button" class="glow-button">
+                        <i class="fas fa-play"></i> START
+                    </button>
+                    <button id="sound-button" class="glow-button">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="button-container mt-3">
+                    <a href="{{ url_for('home') }}" class="glow-button" style="text-align: center; text-decoration: none; display: block; margin-right: 5px; flex: 1;">
+                        <i class="fas fa-home"></i> HOME
+                    </a>
+                    <a href="{{ url_for('tetris_leaderboard') }}" class="glow-button" style="text-align: center; text-decoration: none; display: block; flex: 1;">
+                        <i class="fas fa-trophy"></i> LEADERBOARD
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <button id="mobile-left" class="mobile-btn"><i class="fas fa-arrow-left"></i></button>
+        <button id="mobile-rotate" class="mobile-btn"><i class="fas fa-redo"></i></button>
+        <button id="mobile-right" class="mobile-btn"><i class="fas fa-arrow-right"></i></button>
+        <button id="mobile-down" class="mobile-btn"><i class="fas fa-arrow-down"></i></button>
+        <button id="mobile-drop" class="mobile-btn"><i class="fas fa-angle-double-down"></i></button>
+        <button id="mobile-hold" class="mobile-btn">H</button>
+    </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1" aria-labelledby="leaderboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="leaderboardModalLabel">Tetris Leaderboard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Player</th>
+                            <th scope="col">Score</th>
+                            <th scope="col">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                        <tr>
+                            <td colspan="4" class="text-center">Loading leaderboard...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+<script src="{{ url_for('static', filename='js/tetris.js') }}"></script>
+<script>
+    // Add code to update the high score when the game ends
+    document.addEventListener('DOMContentLoaded', () => {
+        // Prevent space key from scrolling the page
+        window.addEventListener('keydown', function(e) {
+            if(e.code === 'Space' && e.target === document.body) {
+                e.preventDefault();
+            }
+        });
+        
+        // Add a game over event listener
+        window.addEventListener('gameOver', function(e) {
+            const finalScore = e.detail.score;
+            console.log("Game over detected, final score:", finalScore);
+            
+            // Send score to server
+            fetch('{{ url_for("update_score") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ score: finalScore })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Score update response:", data);
+                if (data.success) {
+                    // Update high score display
+                    document.getElementById('high-score').textContent = data.high_score;
+                }
+            })
+            .catch(error => {
+                console.error("Error updating score:", error);
+            });
+        });
+        
+        // Get the original updateScore function
+        const originalUpdateScore = window.updateScore;
+        if (typeof originalUpdateScore === 'function') {
+            // Override it to also update high score
+            window.updateScore = function() {
+                // Call original function first
+                originalUpdateScore.apply(this, arguments);
+                
+                // Update high score if needed
+                const currentScore = parseInt(document.getElementById('score').textContent);
+                const highScoreElement = document.getElementById('high-score');
+                const highScore = parseInt(highScoreElement.textContent);
+                
+                if (currentScore > highScore) {
+                    highScoreElement.textContent = currentScore;
+                }
+            };
+        }
+        
+        // Add a button to show leaderboard
+        const rightPanel = document.querySelector('.right-panel .button-container');
+        const leaderboardBtn = document.createElement('button');
+        leaderboardBtn.className = 'glow-button';
+        leaderboardBtn.innerHTML = '<i class="fas fa-trophy"></i>';
+        leaderboardBtn.style.marginLeft = '5px';
+        leaderboardBtn.addEventListener('click', showLeaderboard);
+        
+        function showLeaderboard() {
+            const modal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
+            
+            // Fetch leaderboard data
+            fetch('{{ url_for("get_tetris_leaderboard") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const leaderboardBody = document.getElementById('leaderboardBody');
+                    leaderboardBody.innerHTML = '';
+                    
+                    if (data.leaderboard.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="4" class="text-center">No scores recorded yet!</td>';
+                        leaderboardBody.appendChild(row);
+                    } else {
+                        data.leaderboard.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            
+                            // Add highlight class for top 3
+                            if (index === 0) row.classList.add('table-warning'); // Gold
+                            else if (index === 1) row.classList.add('table-light'); // Silver
+                            else if (index === 2) row.classList.add('table-secondary'); // Bronze
+                            
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${entry.username}</td>
+                                <td>${entry.score}</td>
+                                <td>${entry.date}</td>
+                            `;
+                            leaderboardBody.appendChild(row);
+                        });
+                    }
+                    
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error fetching leaderboard:', error);
+                });
+        }
+    });
+</script>
+{% endblock %}

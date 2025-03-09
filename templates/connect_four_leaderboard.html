@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .leaderboard-container {
+        max-width: 800px;
+        margin: 50px auto;
+    }
+    
+    .leaderboard-title {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 15px;
+        text-align: left;
+    }
+    
+    .leaderboard-table th {
+        background-color: #6c5ce7;
+        color: white;
+        text-transform: uppercase;
+        font-size: 14px;
+    }
+    
+    .leaderboard-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .leaderboard-table tr:hover {
+        background-color: #f1f1f1;
+    }
+    
+    .rank-column {
+        text-align: center;
+        width: 60px;
+    }
+    
+    .gold {
+        background-color: rgba(255, 215, 0, 0.2) !important;
+    }
+    
+    .silver {
+        background-color: rgba(192, 192, 192, 0.2) !important;
+    }
+    
+    .bronze {
+        background-color: rgba(205, 127, 50, 0.2) !important;
+    }
+    
+    .stats-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        flex: 1;
+        margin: 0 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .actions-container {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <h1 class="leaderboard-title">Connect Four Leaderboard</h1>
+    
+    {% if current_user.is_authenticated %}
+    <div class="stats-container">
+        <div class="stat-card">
+            <div>Your Wins</div>
+            <div class="stat-value text-success">{{ current_user_stats.wins|default(0) }}</div>
+        </div>
+        <div class="stat-card">
+            <div>Your Losses</div>
+            <div class="stat-value text-danger">{{ current_user_stats.losses|default(0) }}</div>
+        </div>
+        <div class="stat-card">
+            <div>Win Rate</div>
+            <div class="stat-value text-primary">{{ current_user_stats.win_rate|default(0) }}%</div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <ul class="nav nav-tabs" id="leaderboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pvp-tab" data-bs-toggle="tab" data-bs-target="#pvp" type="button" role="tab" aria-controls="pvp" aria-selected="true">PvP Leaderboard</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ai-tab" data-bs-toggle="tab" data-bs-target="#ai" type="button" role="tab" aria-controls="ai" aria-selected="false">AI Challengers</button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="leaderboardTabContent">
+        <div class="tab-pane fade show active" id="pvp" role="tabpanel" aria-labelledby="pvp-tab">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th class="rank-column">Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Win Rate</th>
+                        <th>Last Played</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in leaderboard %}
+                        <tr class="{% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %}">
+                            <td class="rank-column">{{ loop.index }}</td>
+                            <td>{{ entry.username }}</td>
+                            <td>{{ entry.wins }}</td>
+                            <td>{{ entry.losses }}</td>
+                            <td>{{ entry.win_rate() }}%</td>
+                            <td>{{ entry.date_updated.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                    {% endfor %}
+                    
+                    {% if leaderboard|length == 0 %}
+                        <tr>
+                            <td colspan="6" style="text-align: center;">No games played yet. Be the first to get on the leaderboard!</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="tab-pane fade" id="ai" role="tabpanel" aria-labelledby="ai-tab">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th class="rank-column">Rank</th>
+                        <th>Player</th>
+                        <th>AI Wins</th>
+                        <th>AI Losses</th>
+                        <th>Win Rate vs AI</th>
+                        <th>Last Played</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in ai_leaderboard %}
+                        <tr class="{% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %}">
+                            <td class="rank-column">{{ loop.index }}</td>
+                            <td>{{ entry.username }}</td>
+                            <td>{{ entry.ai_wins }}</td>
+                            <td>{{ entry.ai_losses }}</td>
+                            <td>{{ (entry.ai_wins / (entry.ai_wins + entry.ai_losses) * 100)|round(1) if (entry.ai_wins + entry.ai_losses) > 0 else 0 }}%</td>
+                            <td>{{ entry.date_updated.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                    {% endfor %}
+                    
+                    {% if ai_leaderboard|length == 0 %}
+                        <tr>
+                            <td colspan="6" style="text-align: center;">No AI games played yet. Be the first to challenge the AI!</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="actions-container">
+        <a href="{{ url_for('connect_four_home') }}" class="btn btn-primary">Play Connect Four</a>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

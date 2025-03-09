@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    /* Player info section */
+    .player-panel {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .player {
+        padding: 10px 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s;
+    }
+    
+    .player.active {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    
+    .player-1 {
+        background-color: rgba(255, 0, 0, 0.1);
+    }
+    
+    .player-2 {
+        background-color: rgba(255, 255, 0, 0.1);
+    }
+    
+    .player-disc {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    
+    .player-1 .player-disc {
+        background-color: #ff0000;
+    }
+    
+    .player-2 .player-disc {
+        background-color: #ffff00;
+    }
+    
+    .turn-indicator {
+        text-align: center;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    /* Game board */
+    .game-board {
+        background-color: #0055aa;
+        padding: 15px;
+        border-radius: 10px;
+        display: inline-block;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+    
+    .board-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    /* Column buttons */
+    .column-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    
+    .column-button {
+        width: 50px;
+        height: 30px;
+        margin: 0 5px;
+        background-color: #dddddd;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+    
+    .column-button:hover {
+        background-color: #bbbbbb;
+    }
+    
+    /* Game cells */
+    .board-row {
+        display: flex;
+    }
+    
+    .board-cell {
+        width: 50px;
+        height: 50px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        margin: 5px;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    }
+    
+    .red-disc {
+        background-color: #ff0000;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        animation: drop-disc 0.5s;
+    }
+    
+    .yellow-disc {
+        background-color: #ffff00;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        animation: drop-disc 0.5s;
+    }
+    
+    @keyframes drop-disc {
+        0% { transform: translateY(-300%); }
+        100% { transform: translateY(0); }
+    }
+    
+    /* Game actions */
+    .game-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .board-cell {
+            width: 40px;
+            height: 40px;
+            margin: 3px;
+        }
+        
+        .column-button {
+            width: 40px;
+            margin: 0 3px;
+        }
+    }
+    
+    /* Win/draw message */
+    #game-result {
+        text-align: center;
+        font-weight: bold;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .win-message {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .draw-message {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Connect Four - Local Game</h1>
+    
+    <div class="player-panel">
+        <div class="player player-1 active" id="player1">
+            <div class="player-disc"></div>
+            <span>Player 1</span>
+        </div>
+        
+        <div class="turn-indicator" id="turn-indicator">
+            Player 1's Turn
+        </div>
+        
+        <div class="player player-2" id="player2">
+            <div class="player-disc"></div>
+            <span>Player 2</span>
+        </div>
+    </div>
+    
+    <div class="board-container">
+        <div class="game-board">
+            <div class="column-buttons" id="column-buttons">
+                <button class="column-button" data-col="0">↓</button>
+                <button class="column-button" data-col="1">↓</button>
+                <button class="column-button" data-col="2">↓</button>
+                <button class="column-button" data-col="3">↓</button>
+                <button class="column-button" data-col="4">↓</button>
+                <button class="column-button" data-col="5">↓</button>
+                <button class="column-button" data-col="6">↓</button>
+            </div>
+            
+            <div id="board">
+                <!-- Row 0 (top row) -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="0" data-col="0"></div>
+                    <div class="board-cell" data-row="0" data-col="1"></div>
+                    <div class="board-cell" data-row="0" data-col="2"></div>
+                    <div class="board-cell" data-row="0" data-col="3"></div>
+                    <div class="board-cell" data-row="0" data-col="4"></div>
+                    <div class="board-cell" data-row="0" data-col="5"></div>
+                    <div class="board-cell" data-row="0" data-col="6"></div>
+                </div>
+                
+                <!-- Row 1 -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="1" data-col="0"></div>
+                    <div class="board-cell" data-row="1" data-col="1"></div>
+                    <div class="board-cell" data-row="1" data-col="2"></div>
+                    <div class="board-cell" data-row="1" data-col="3"></div>
+                    <div class="board-cell" data-row="1" data-col="4"></div>
+                    <div class="board-cell" data-row="1" data-col="5"></div>
+                    <div class="board-cell" data-row="1" data-col="6"></div>
+                </div>
+                
+                <!-- Row 2 -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="2" data-col="0"></div>
+                    <div class="board-cell" data-row="2" data-col="1"></div>
+                    <div class="board-cell" data-row="2" data-col="2"></div>
+                    <div class="board-cell" data-row="2" data-col="3"></div>
+                    <div class="board-cell" data-row="2" data-col="4"></div>
+                    <div class="board-cell" data-row="2" data-col="5"></div>
+                    <div class="board-cell" data-row="2" data-col="6"></div>
+                </div>
+                
+                <!-- Row 3 -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="3" data-col="0"></div>
+                    <div class="board-cell" data-row="3" data-col="1"></div>
+                    <div class="board-cell" data-row="3" data-col="2"></div>
+                    <div class="board-cell" data-row="3" data-col="3"></div>
+                    <div class="board-cell" data-row="3" data-col="4"></div>
+                    <div class="board-cell" data-row="3" data-col="5"></div>
+                    <div class="board-cell" data-row="3" data-col="6"></div>
+                </div>
+                
+                <!-- Row 4 -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="4" data-col="0"></div>
+                    <div class="board-cell" data-row="4" data-col="1"></div>
+                    <div class="board-cell" data-row="4" data-col="2"></div>
+                    <div class="board-cell" data-row="4" data-col="3"></div>
+                    <div class="board-cell" data-row="4" data-col="4"></div>
+                    <div class="board-cell" data-row="4" data-col="5"></div>
+                    <div class="board-cell" data-row="4" data-col="6"></div>
+                </div>
+                
+                <!-- Row 5 (bottom row) -->
+                <div class="board-row">
+                    <div class="board-cell" data-row="5" data-col="0"></div>
+                    <div class="board-cell" data-row="5" data-col="1"></div>
+                    <div class="board-cell" data-row="5" data-col="2"></div>
+                    <div class="board-cell" data-row="5" data-col="3"></div>
+                    <div class="board-cell" data-row="5" data-col="4"></div>
+                    <div class="board-cell" data-row="5" data-col="5"></div>
+                    <div class="board-cell" data-row="5" data-col="6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="game-result"></div>
+    
+    <div class="game-actions">
+        <button id="new-game" class="btn btn-warning">New Game</button>
+        <button id="undo-move" class="btn btn-secondary">Undo Move</button>
+        <a href="{{ url_for('connect_four_home') }}" class="btn btn-outline-primary">Back to Menu</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Game constants
+        const ROWS = 6;
+        const COLS = 7;
+        const EMPTY = 0;
+        const PLAYER_1 = 1;
+        const PLAYER_2 = 2;
+        
+        // Game state
+        let currentPlayer = PLAYER_1;
+        let gameActive = true;
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(EMPTY));
+        let moveHistory = [];
+        
+        // DOM Elements
+        const columnButtons = document.querySelectorAll('.column-button');
+        const player1Element = document.getElementById('player1');
+        const player2Element = document.getElementById('player2');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const gameResultElement = document.getElementById('game-result');
+        const newGameButton = document.getElementById('new-game');
+        const undoMoveButton = document.getElementById('undo-move');
+        
+        // Initialize the game
+        function initGame() {
+            // Reset game state
+            currentPlayer = PLAYER_1;
+            gameActive = true;
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(EMPTY));
+            moveHistory = [];
+            
+            // Clear the board UI
+            const cells = document.querySelectorAll('.board-cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+            });
+            
+            // Update UI
+            updateTurnIndicator();
+            updatePlayerHighlight();
+            
+            // Hide any game result message
+            gameResultElement.style.display = 'none';
+        }
+        
+        // Make a move in the specified column
+        function makeMove(col) {
+            if (!gameActive) return;
+            
+            // Find the lowest empty row in the column
+            const row = findLowestEmptyRow(col);
+            if (row === -1) return; // Column is full
+            
+            // Update the board array
+            board[row][col] = currentPlayer;
+            moveHistory.push({ row, col, player: currentPlayer });
+            
+            // Update the UI
+            updateCellUI(row, col);
+            
+            // Check for win or draw
+            if (checkWin(row, col)) {
+                gameActive = false;
+                showGameResult(`Player ${currentPlayer} wins!`, true);
+                return;
+            }
+            
+            if (checkDraw()) {
+                gameActive = false;
+                showGameResult("It's a draw!", false);
+                return;
+            }
+            
+            // Switch players
+            currentPlayer = currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+            updateTurnIndicator();
+            updatePlayerHighlight();
+        }
+        
+        // Find the lowest empty row in a column
+        function findLowestEmptyRow(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (board[row][col] === EMPTY) {
+                    return row;
+                }
+            }
+            return -1; // Column is full
+        }
+        
+        // Update the UI of a cell
+        function updateCellUI(row, col) {
+            const cell = document.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
+            const disc = document.createElement('div');
+            disc.className = currentPlayer === PLAYER_1 ? 'red-disc' : 'yellow-disc';
+            cell.appendChild(disc);
+        }
+        
+        // Update the turn indicator
+        function updateTurnIndicator() {
+            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+        }
+        
+        // Update player highlight
+        function updatePlayerHighlight() {
+            if (currentPlayer === PLAYER_1) {
+                player1Element.classList.add('active');
+                player2Element.classList.remove('active');
+            } else {
+                player1Element.classList.remove('active');
+                player2Element.classList.add('active');
+            }
+        }
+        
+        // Show game result message
+        function showGameResult(message, isWin) {
+            gameResultElement.textContent = message;
+            gameResultElement.className = isWin ? 'win-message' : 'draw-message';
+            gameResultElement.style.display = 'block';
+        }
+        
+        // Check if the last move resulted in a win
+        function checkWin(row, col) {
+            const player = board[row][col];
+            const directions = [
+                [0, 1],  // horizontal
+                [1, 0],  // vertical
+                [1, 1],  // diagonal down-right
+                [1, -1]  // diagonal down-left
+            ];
+            
+            for (const [dx, dy] of directions) {
+                let count = 1;  // Start with 1 for the piece just placed
+                
+                // Check in the positive direction
+                for (let i = 1; i < 4; i++) {
+                    const r = row + i * dx;
+                    const c = col + i * dy;
+                    
+                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Check in the negative direction
+                for (let i = 1; i < 4; i++) {
+                    const r = row - i * dx;
+                    const c = col - i * dy;
+                    
+                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                if (count >= 4) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Check if the game is a draw
+        function checkDraw() {
+            // Game is a draw if all top row cells are filled
+            return board[0].every(cell => cell !== EMPTY);
+        }
+        
+        // Undo the last move
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            
+            const lastMove = moveHistory.pop();
+            board[lastMove.row][lastMove.col] = EMPTY;
+            
+            // Update UI
+            const cell = document.querySelector(`.board-cell[data-row="${lastMove.row}"][data-col="${lastMove.col}"]`);
+            cell.innerHTML = '';
+            
+            // Restore game state if it was over
+            if (!gameActive) {
+                gameActive = true;
+                gameResultElement.style.display = 'none';
+            } else {
+                // Switch back to previous player
+                currentPlayer = currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+            }
+            
+            updateTurnIndicator();
+            updatePlayerHighlight();
+        }
+        
+        // Event Listeners
+        columnButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const col = parseInt(this.dataset.col);
+                makeMove(col);
+            });
+        });
+        
+        newGameButton.addEventListener('click', initGame);
+        undoMoveButton.addEventListener('click', undoMove);
+        
+        // Initialize the game on load
+        initGame();
+    });
+</script>
+{% endblock %}

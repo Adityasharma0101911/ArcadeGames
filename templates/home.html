@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .game-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .game-img {
+        height: 180px;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    .tetris-img {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                          url('https://images.unsplash.com/photo-1633235918856-833e27aeaa63?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+    }
+    .connect-four-img {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                          url('https://images.unsplash.com/photo-1586165368502-1bad197a6461?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+    }
+    
+    .coming-soon-img {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                          url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+    }
+    
+    .game-stats {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background-color: rgba(0,0,0,0.05);
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .home-title {
+        margin-top: 50px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="text-center home-title">Welcome, {{ current_user.username }}!</h1>
+        <p class="text-center text-muted">Select a game to play</p>
+    </div>
+</div>
+
+<div class="col-md-4">
+    <div class="card game-card">
+        <div class="game-img tetris-img d-flex align-items-center justify-content-center">
+            <h2 class="text-white">Tetris</h2>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Tetris</h5>
+            <p class="card-text">Classic block-stacking puzzle game. Arrange falling tetrominos to complete horizontal lines.</p>
+            <div class="d-flex gap-2 mb-2">
+                <a href="{{ url_for('tetris') }}" class="btn btn-primary flex-grow-1">Play Now</a>
+                <a href="{{ url_for('tetris_leaderboard') }}" class="btn btn-outline-primary" title="Leaderboard">
+                    <i class="fas fa-trophy"></i>
+                </a>
+            </div>
+        </div>
+        <div class="game-stats">
+            <span>High Score: {{ current_user.tetris_high_score }}</span>
+            <span><i class="fas fa-gamepad"></i> Played: Recently</span>
+        </div>
+    </div>
+</div>
+    
+    <div class="col-md-4">
+        <div class="card game-card">
+            <div class="game-img coming-soon-img d-flex align-items-center justify-content-center">
+                <h2 class="text-white">Snake</h2>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Snake Game</h5>
+                <p class="card-text">Control a growing snake, eat food and avoid hitting walls or yourself.</p>
+                <button class="btn btn-secondary d-block w-100" disabled>Coming Soon</button>
+            </div>
+            <div class="game-stats">
+                <span>High Score: N/A</span>
+                <span><i class="fas fa-clock"></i> Coming Soon</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card game-card">
+            <div class="game-img connect-four-img d-flex align-items-center justify-content-center">
+                <h2 class="text-white">Connect Four</h2>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Connect Four</h5>
+                <p class="card-text">Classic two-player connection game. Drop your pieces to connect four in a row.</p>
+                <div class="d-flex gap-2 mb-2">
+                    <a href="{{ url_for('connect_four_home') }}" class="btn btn-primary flex-grow-1">Play Now</a>
+                    <a href="{{ url_for('connect_four_leaderboard') }}" class="btn btn-outline-primary" title="Leaderboard">
+                        <i class="fas fa-trophy"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="game-stats">
+                <span>Multiplayer Available</span>
+                <span><i class="fas fa-gamepad"></i> 3 Game Modes</span>
+            </div>
+        </div>
+    </div>
+{% endblock %}

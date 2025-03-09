@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .leaderboard-container {
+        max-width: 800px;
+        margin: 50px auto;
+    }
+    
+    .leaderboard-title {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 15px;
+        text-align: left;
+    }
+    
+    .leaderboard-table th {
+        background-color: #6c5ce7;
+        color: white;
+        text-transform: uppercase;
+        font-size: 14px;
+    }
+    
+    .leaderboard-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .leaderboard-table tr:hover {
+        background-color: #f1f1f1;
+    }
+    
+    .rank-column {
+        text-align: center;
+        width: 80px;
+    }
+    
+    .score-column {
+        text-align: right;
+        width: 150px;
+    }
+    
+    .date-column {
+        width: 150px;
+        text-align: center;
+    }
+    
+    .actions-container {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .gold {
+        background-color: rgba(255, 215, 0, 0.2) !important;
+    }
+    
+    .silver {
+        background-color: rgba(192, 192, 192, 0.2) !important;
+    }
+    
+    .bronze {
+        background-color: rgba(205, 127, 50, 0.2) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <h1 class="leaderboard-title">Tetris Leaderboard</h1>
+    
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th class="rank-column">Rank</th>
+                <th>Player</th>
+                <th class="score-column">Score</th>
+                <th class="date-column">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard %}
+                <tr class="{% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %}">
+                    <td class="rank-column">{{ loop.index }}</td>
+                    <td>{{ entry.username }}</td>
+                    <td class="score-column">{{ entry.score }}</td>
+                    <td class="date-column">{{ entry.date_achieved.strftime('%Y-%m-%d') }}</td>
+                </tr>
+            {% endfor %}
+            
+            {% if leaderboard|length == 0 %}
+                <tr>
+                    <td colspan="4" style="text-align: center;">No scores recorded yet. Be the first to get on the leaderboard!</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <div class="actions-container">
+        <a href="{{ url_for('tetris') }}" class="btn btn-primary">Play Tetris</a>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}
